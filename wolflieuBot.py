@@ -80,25 +80,24 @@ def changeBoard(board, move, type):
     return board
 
 def makeMove(board, turns, blue):
-    instruction = "Please return the asnswer in 4.5 seconds"
-    instruction += "This is a game called larsker morris, I want you to provide the best move possible. Here is how I symbolize the positions: The board has the following format:\n"
-    instruction += "a7\t\t\td7\t\t\tg7\n"
-    instruction += "\tb6\t\td6\t\tf6\t\n"
-    instruction += "\t\tc5\td5\te5\t\t\n"
-    instruction += "a4\tb4\tc4\t\te4\tf4\tg4\n"
-    instruction += "\t\tc3\td3\te3\t\t\n"
-    instruction += "\tb2\t\td2\t\tf2\t\n"
-    instruction += "a1\t\t\td1\t\t\tg1\n"
-    instruction += "you will win the game when you make the opponent doesn't have any move left or the total number of mills on hand and on board equals to 2 and the same condition for losing.\n"
-    instruction += "you will have a mill when the move you just made create a 3 consecutive positions of your man vertically or horizontally. For example, a4 b4 c4, b2 b4 b6 are valid mills while a7 b6 c5 and b4 c4 e4 are not valid mills. When a mill is created, you MUST remove the opponent's man that is not in mill unless all of the opponent's man are in mill\n"
-    instruction += "Similarly, the opponent will remove one of your man when they create a mill\n"
-    instruction += "try to create as much mill as possible, you can break a mill and make it back in order to create a mill again.\n"
-    instruction += "In phase 1 (when you still have pieces on hand, if you are blue, decode the first part as h1, if you are orange, decode the first part as h2.) The second part would be the position of the man you want to put in, and the third part would be the position of the opponent that you want to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
-    instruction += "In phase 2 (when you don't have any pieces on hand and you have more than 3 man), the first part would be the man that you want to move, the second part is the postion than you want your man to move to (in this phase, you can only move your man to a position next to the previous position), and again, the third part would be the position of the opponent that you want to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
-    instruction += "In phase 3 (when you only have 3 man left), the first part would be the man that you want to move, the second part is the postion than you want your man to move to (in this phase, you can move your man to any empty spaces), and again, the third part would be the position of the opponent that you want to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
-    instruction += "Some examples are h1 d3 r0 (the blue player takes the man on hand and put in position d3. Since it didn't create a mill, the third part is r0), a7 a4 d3 (the player move it's man from position a7 to a4 and since it create a mill, the player must remove a mam from the opponent and the choice is d3."
+    content = "This is a game called larsker morris, I want you to provide the best move possible. Here is how I symbolize the positions: The board has the following format:\n"
+    content += "a7\t\t\td7\t\t\tg7\n"
+    content += "\tb6\t\td6\t\tf6\t\n"
+    content += "\t\tc5\td5\te5\t\t\n"
+    content += "a4\tb4\tc4\t\te4\tf4\tg4\n"
+    content += "\t\tc3\td3\te3\t\t\n"
+    content += "\tb2\t\td2\t\tf2\t\n"
+    content += "a1\t\t\td1\t\t\tg1\n"
+    content += "you will win the game when you make the opponent doesn't have any move left or the total number of mills on hand and on board equals to 2 and the same condition for losing.\n"
+    content += "you will have a mill when the move you just made create a 3 consecutive positions of your man vertically or horizontally. For example, a4 b4 c4, b2 b4 b6 are valid mills while a7 b6 c5 and b4 c4 e4 are not valid mills. When a mill is created, you MUST remove the opponent's man that is not in mill unless all of the opponent's man are in mill\n"
+    content += "Similarly, the opponent will remove one of your man when they create a mill\n"
+    content += "try to create as much mill as possible, you can break a mill and make it back in order to create a mill again.\n"
+    content += "In phase 1 (when you still have pieces on hand, if you are blue, decode the first part as h1, if you are orange, decode the first part as h2.) The second part would be the position of the man you want to put in (the space must be empty), and the third part would be the position of the opponent that you have to to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
+    content += "In phase 2 (when you don't have any pieces on hand and you have more than 3 man), the first part would be the man that you want to move, the second part is the postion (the space must be empty) that you want your man to move to (in this phase, you can only move your man to a position next to the previous position), and again, the third part would be the position of the opponent that you have to to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
+    content += "In phase 3 (when you only have 3 man left), the first part would be the man that you want to move, the second part is the postion than you want your man to move to (in this phase, you can move your man to any empty spaces), and again, the third part would be the position of the opponent that you have to to remove if you have a mill. If you don't have a mill, the third part would be r0\n"
+    content += "Some examples are h1 d3 r0 (the blue player takes the man on hand and put in position d3. Since it didn't create a mill, the third part is r0), a7 a4 d3 (the player move it's man from position a7 to a4 and since it create a mill, the player must remove a mam from the opponent and the choice is d3.\n"
 
-    content = "In this game, you are "
+    content += "In this game, you are "
     content += "blue. " if blue else "orange. "
     content += "What is the best possible move for you?\n"
     if turns <= 20:
@@ -127,17 +126,21 @@ def makeMove(board, turns, blue):
         content += indexToMove(orangePieces[i][0], orangePieces[i][1]) + " "
     content += "\n"
     content += "And you can move to the remaining empty spaces\n"
-    content += "You just need to give out the move, nothing else"
+    content += "Here's to make sure you understand the instruction: "
+    content += "you will have a mill when the move you just made create a 3 consecutive positions of your man vertically or horizontally. For example, a4 b4 c4, b2 b4 b6 are valid mills while a7 b6 c5 and b4 c4 e4 are not valid mills. When a mill is created, you MUST remove the opponent's man that is not in mill unless all of the opponent's man are in mill\n"
+    content += "You just need to give out the move, nothing else\n"
+    content += content
+    content += content
+    content += content
+    content += content
+    content += content
+    content += content
 
-    sys_instruct = instruction
     client = genai.Client(api_key=api_key)
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
-        config=types.GenerateContentConfig(
-            system_instruction=sys_instruct),
-        contents=[content]
-    )
+        contents=[content])
     return (response.text[0:8])
 
 def main():
