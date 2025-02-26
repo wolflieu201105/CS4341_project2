@@ -1,4 +1,5 @@
 import sys
+import random
 
 #convert the text to move in array
 def moveToIndex(str):
@@ -433,6 +434,72 @@ def makeMove(board, turn, lastChanged, isBlue):
             board = changeBoardWithIndex(board, ChoosablePieces[l][0], ChoosablePieces[l][1], 1)
     return firstMove + " " + secondMove + " " + thirdMove
 
+def makeRandomMove(board, turn, isBlue):
+    firstMove = ""
+    secondMove = ""
+    thirdMove = "r0"
+    
+    if turn <= 20:
+        firstMove = "h1" if isBlue else "h2"
+        possibleMoves = checkSpacesState(board, 0)
+        moveIndex = random.randint(0, len(possibleMoves) - 1)
+        movePos = possibleMoves[moveIndex]
+        secondMove = indexToMove(movePos[0], movePos[1])
+        
+        # check for mills
+        board = changeBoardWithIndex(board, movePos[0], movePos[1], 1)
+        if checkForMill(board, movePos[0], movePos[1], 1):
+            possibleRemoves = checkRemovableSpaces(board, -1)
+            if possibleRemoves:
+                removeIndex = random.randint(0, len(possibleRemoves) - 1)
+                removePos = possibleRemoves[removeIndex]
+                thirdMove = indexToMove(removePos[0], removePos[1])
+
+        board = changeBoardWithIndex(board, movePos[0], movePos[1], 0)
+    
+    else:
+        myPieces = checkSpacesState(board, 1)
+        # flying
+        canFly = len(myPieces) == 3
+        validPiecesToMove = []
+
+        for piece in myPieces:
+            if canFly:
+                possibleDestinations = checkSpacesState(board, 0)
+                if possibleDestinations:
+                    validPiecesToMove.append(piece)
+            else:
+                possibleDestinations = checkPossibleMoves(board, piece[0], piece[1])
+                if possibleDestinations:
+                    validPiecesToMove.append(piece)
+        
+        pieceIndex = random.randint(0, len(validPiecesToMove) - 1)
+        piecePos = validPiecesToMove[pieceIndex]
+        firstMove = indexToMove(piecePos[0], piecePos[1])
+
+        if canFly:
+            possibleDestinations = checkSpacesState(board, 0)
+        else:
+            possibleDestinations = checkPossibleMoves(board, piecePos[0], piecePos[1])
+        
+        destIndex = random.randint(0, len(possibleDestinations) - 1)
+        destPos = possibleDestinations[destIndex]
+        secondMove = indexToMove(destPos[0], destPos[1])
+
+        board = changeBoardWithIndex(board, piecePos[0], piecePos[1], 0)
+        board = changeBoardWithIndex(board, destPos[0], destPos[1], 1)
+        
+        if checkForMill(board, destPos[0], destPos[1], 1):
+            possibleRemoves = checkRemovableSpaces(board, -1)
+            if possibleRemoves:
+                removeIndex = random.randint(0, len(possibleRemoves) - 1)
+                removePos = possibleRemoves[removeIndex]
+                thirdMove = indexToMove(removePos[0], removePos[1])
+        
+        board = changeBoardWithIndex(board, destPos[0], destPos[1], 0)
+        board = changeBoardWithIndex(board, piecePos[0], piecePos[1], 1)
+    
+    return firstMove + " " + secondMove + " " + thirdMove
 
 def main():
     board = [[0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0, 0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0]]
@@ -449,7 +516,8 @@ def main():
         try:
             if (myTurn):
                 turns += 1
-                move = makeMove(board, turns, lastChanged, blue)
+                # move = makeMove(board, turns, lastChanged, blue)
+                move = makeRandomMove(board, turns, blue)
                 print(move, flush = True)
                 board = changeBoard(board, move, 1)
                 myTurn = False
@@ -470,3 +538,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
