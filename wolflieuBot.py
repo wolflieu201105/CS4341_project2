@@ -3,6 +3,7 @@ from google.genai import types
 import os
 from dotenv import load_dotenv
 import time
+import random
 
 
 load_dotenv()
@@ -67,6 +68,12 @@ def printBoard(board):
         content += "\n"
     return content
 
+# change a position of the board to type
+def changeBoardWithIndex(board, row, col, type):
+    board[row][col] = type
+    return board
+
+# with a legal move used provided by the referee, change the board accordingly
 def changeBoard(board, move, type):
     move = move.split(" ")
     if (move[0] != "h1" and move[0] != "h2"):
@@ -78,6 +85,185 @@ def changeBoard(board, move, type):
         moveUsed = moveToIndex(move[2])
         board[moveUsed[0]][moveUsed[1]] = 0
     return board
+
+# Check for mill based on the row and column used
+def checkForMill(board, row, col, type):
+    if (row != 3):
+        for i in range(3):
+            if (board[row][i] != type):
+                break
+            if (i == 2):
+                return True
+        if col == 0:
+            if (board[6-row][col] == type and board[3][3 - abs(3-row)] == type):
+                return True
+        elif col == 2:
+            if (board[6-row][col] == type and board[3][2 + abs(3-row)] == type):
+                return True
+        else:
+            if row < 3:
+                if (board[0][1] == type and board[1][1] == type and board[2][1] == type):
+                    return True
+            else:
+                if (board[4][1] == type and board[5][1] == type and board[6][1] == type):
+                    return True
+    else:
+        if col < 3:
+            for i in range(3):
+                if (board[3][i] != type):
+                    break
+                if (i == 2):
+                    return True
+            if (board[col][0] == type and board[6 - col][0] == type):
+                return True
+        else:
+            for i in range(3):
+                if (board[3][i + 3] != type):
+                    break
+                if (i == 2):
+                    return True
+            if (board[col + 1][2] == type and board[6 - col - 1][2] == type):
+                return True
+    return False
+
+# check for opponent pieces that is not in mill. If all pieces are in a mill, return all opponents pieces
+def checkRemovableSpaces(board, type):
+    possibleMoves = checkSpacesState(board, type)
+    i = 0
+    while i < len(possibleMoves):
+        if (checkForMill(board, possibleMoves[i][0], possibleMoves[i][1], type)):
+            possibleMoves.pop(i)
+            i -= 1
+        i += 1
+    if (len(possibleMoves) == 0):
+        possibleMoves = checkSpacesState(board, type)
+    return possibleMoves
+
+# with a piece ar row,col, determine the positions that the piece can move to
+def checkPossibleMoves(board, row, col):
+    possibleMoves = []
+    if row != 3:
+        if col == 0:
+            if (board[3][3 - abs(3-row)] == 0):
+                possibleMoves.append([3, 3 - abs(3-row)])
+            if (board[row][1] == 0):
+                possibleMoves.append([row, 1])
+        elif col == 2:
+            if (board[3][2 + abs(3-row)] == 0):
+                possibleMoves.append([3, 2 + abs(3-row)])
+            if (board[row][1] == 0):
+                possibleMoves.append([row, 1])
+        else:
+            if (board[row][0] == 0):
+                possibleMoves.append([row, 0])
+            if (board[row][2] == 0):
+                possibleMoves.append([row, 2])
+            if row < 3:
+                if row < 2:
+                    if (board[row+1][1] == 0):
+                        possibleMoves.append([row+1, 1])
+                if row > 0:
+                    if (board[row-1][1] == 0):
+                        possibleMoves.append([row-1, 1])
+            if row > 3:
+                if row < 6:
+                    if (board[row+1][1] == 0):
+                        possibleMoves.append([row+1, 1])
+                if row > 4:
+                    if (board[row-1][1] == 0):
+                        possibleMoves.append([row-1, 1])
+    else:
+        if col < 3:
+            if (board[col][0] == 0):
+                possibleMoves.append([col, 0])
+            if (board[6-col][0] == 0):
+                possibleMoves.append([6-col, 0])
+            if col < 2:
+                if (board[3][col + 1] == 0):
+                    possibleMoves.append([3, col + 1])
+            elif col > 0:
+                if (board[3][col - 1] == 0):
+                    possibleMoves.append([3, col - 1])
+        else:
+            if (board[col + 1][2] == 0):
+                possibleMoves.append([col+1, 2])
+            if (board[6 - col - 1][2] == 0):
+                possibleMoves.append([6-col-1, 2])
+            if col > 3:
+                if (board[3][col - 1] == 0):
+                    possibleMoves.append([3, col - 1])
+            elif col < 6:
+                if (board[3][col + 1] == 0):
+                    possibleMoves.append([3, col + 1])
+    return possibleMoves
+
+# make random move as a fallback option
+def makeRandomMove(board, turn, isBlue):
+    firstMove = ""
+    secondMove = ""
+    thirdMove = "r0"
+    
+    if turn <= 20:
+        firstMove = "h1" if isBlue else "h2"
+        possibleMoves = checkSpacesState(board, 0)
+        moveIndex = random.randint(0, len(possibleMoves) - 1)
+        movePos = possibleMoves[moveIndex]
+        secondMove = indexToMove(movePos[0], movePos[1])
+        
+        # check for mills
+        board = changeBoardWithIndex(board, movePos[0], movePos[1], 1)
+        if checkForMill(board, movePos[0], movePos[1], 1):
+            possibleRemoves = checkRemovableSpaces(board, -1)
+            if possibleRemoves:
+                removeIndex = random.randint(0, len(possibleRemoves) - 1)
+                removePos = possibleRemoves[removeIndex]
+                thirdMove = indexToMove(removePos[0], removePos[1])
+
+        board = changeBoardWithIndex(board, movePos[0], movePos[1], 0)
+    
+    else:
+        myPieces = checkSpacesState(board, 1)
+        # flying
+        canFly = len(myPieces) == 3
+        validPiecesToMove = []
+
+        for piece in myPieces:
+            if canFly:
+                possibleDestinations = checkSpacesState(board, 0)
+                if possibleDestinations:
+                    validPiecesToMove.append(piece)
+            else:
+                possibleDestinations = checkPossibleMoves(board, piece[0], piece[1])
+                if possibleDestinations:
+                    validPiecesToMove.append(piece)
+        
+        pieceIndex = random.randint(0, len(validPiecesToMove) - 1)
+        piecePos = validPiecesToMove[pieceIndex]
+        firstMove = indexToMove(piecePos[0], piecePos[1])
+
+        if canFly:
+            possibleDestinations = checkSpacesState(board, 0)
+        else:
+            possibleDestinations = checkPossibleMoves(board, piecePos[0], piecePos[1])
+        
+        destIndex = random.randint(0, len(possibleDestinations) - 1)
+        destPos = possibleDestinations[destIndex]
+        secondMove = indexToMove(destPos[0], destPos[1])
+
+        board = changeBoardWithIndex(board, piecePos[0], piecePos[1], 0)
+        board = changeBoardWithIndex(board, destPos[0], destPos[1], 1)
+        
+        if checkForMill(board, destPos[0], destPos[1], 1):
+            possibleRemoves = checkRemovableSpaces(board, -1)
+            if possibleRemoves:
+                removeIndex = random.randint(0, len(possibleRemoves) - 1)
+                removePos = possibleRemoves[removeIndex]
+                thirdMove = indexToMove(removePos[0], removePos[1])
+        
+        board = changeBoardWithIndex(board, destPos[0], destPos[1], 0)
+        board = changeBoardWithIndex(board, piecePos[0], piecePos[1], 1)
+    
+    return firstMove + " " + secondMove + " " + thirdMove
 
 def makeMove(board, turns, blue):
     instruction = "Please return the asnswer in 4.5 seconds"
@@ -125,7 +311,8 @@ def makeMove(board, turns, blue):
             system_instruction=sys_instruct),
         contents=[content]
     )
-    return (response.text[0:8])
+    # return (response.text[0:8])
+    return makeRandomMove(board, turns, blue)
 
 def main():
     board = [[0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0, 0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0]]
