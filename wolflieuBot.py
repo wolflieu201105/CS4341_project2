@@ -79,8 +79,12 @@ def changeBoard(board, move, type):
         board[moveUsed[0]][moveUsed[1]] = 0
     return board
 
-def makeMove(board, turns, blue):
-    instruction = "Please return the asnswer in 4.5 seconds"
+def makeMove(board, turns, blue, isSecond=0):
+    if isSecond==1:
+        instruction = "You just answered incorrectly, please try again." 
+    else: instruction = ""
+    
+    instruction += "Please return the answer in 4.5 seconds"
     instruction += "This is a game called larsker morris, I want you to provide the best move possible. Here is how I symbolize the positions: The board has the following format:\n"
     instruction += "a7\t\t\td7\t\t\tg7\n"
     instruction += "\tb6\t\td6\t\tf6\t\n"
@@ -112,7 +116,7 @@ def makeMove(board, turns, blue):
     else:
         content += "You don't have any pieces on hand\n"
     
-    content += "The board is as follows: (1 is your man, 0 is empty, -1 is the opponent's man\n"
+    content += "The board is as follows: (1 is your man, 0 is empty, -1 is the opponent's man)\n"
     content += printBoard(board)
     content += "You just need to give out the move, nothing else"
 
@@ -125,7 +129,82 @@ def makeMove(board, turns, blue):
             system_instruction=sys_instruct),
         contents=[content]
     )
+    
+    move = response.text[0:8]
+    
+    parts = move.strip().split()
+    if len(parts) != 3:
+        return False
+
+    source, target, remove = parts
+    
+    if (is_valid_move(board=board, source=source, target=target, remove=remove, blue=blue)):
+        return makeMove(board, turns, blue, 1)
+        
     return (response.text[0:8])
+
+def is_valid_move(board, source: str, target: str, remove: str, blue: bool) -> (bool, str):
+    """Validate move according to game rules.
+
+    Args:
+        board: The current state of the board (7x3 with a special row).
+        source: Starting position of stone ('h1' or 'h2' if from hand).
+        target: Target position for stone placement/movement.
+        remove: Position of opponent's stone to remove ('r0' if none).
+        blue: Boolean indicating if the player is blue.
+
+    Returns:
+        (bool, str): True if move is valid, False with reason if not.
+    """
+    invalid_fields = {
+        "a2", "a3", "a5", "a6", "b1", "b3", "b5", "b7",
+        "c1", "c2", "c6", "c7", "d4", "e1", "e2", "e6", "e7",
+        "f1", "f3", "f5", "f7", "g2", "g3", "g5", "g6",
+    }
+
+    # Convert positions to board indices
+    source_idx = moveToIndex(source)
+    target_idx = moveToIndex(target)
+    remove_idx = moveToIndex(remove)
+
+    # Validate target position
+    if target in invalid_fields or not (0 <= target_idx[0] < 7 and 0 <= target_idx[1] < 3):
+        return False, f"Invalid move: Target position {target} does not exist on the board."
+
+    if board[target_idx[0]][target_idx[1]] != 0:
+        return False, f"Invalid move: Target position {target} is already occupied."
+
+    # Validate source position
+    if source in ["h1", "h2"]:  
+        # Hand move validation
+        correct_hand = "h1" if blue else "h2"
+        if source != correct_hand:
+            return False, f"Invalid move: Player tried to use opponent's hand ({source})."
+    else:
+        if source in invalid_fields or not (0 <= source_idx[0] < 7 and 0 <= source_idx[1] < 3):
+            return False, f"Invalid move: Source position {source} does not exist on the board."
+
+        if board[source_idx[0]][source_idx[1]] != (1 if blue else -1):
+            return False, f"Invalid move: Player tried to move opponent's stone from {source}."
+
+        # Check adjacency rule unless in phase 3
+        if checkSpacesState(board, 1 if blue else -1) > 3:
+            if abs(source_idx[0] - target_idx[0]) > 1 or abs(source_idx[1] - target_idx[1]) > 1:
+                return False, f"Invalid move: Must move to adjacent position when you have more than 3 pieces."
+
+    # Validate remove position
+    if remove != "r0":
+        if remove in invalid_fields or not (0 <= remove_idx[0] < 7 and 0 <= remove_idx[1] < 3):
+            return False, f"Invalid move: Cannot remove stone - position {remove} does not exist."
+
+        if board[remove_idx[0]][remove_idx[1]] == 0:
+            return False, f"Invalid move: Cannot remove stone - position {remove} is empty."
+
+        if board[remove_idx[0]][remove_idx[1]] == (1 if blue else -1):
+            return False, f"Invalid move: Player tried to remove their own stone at {remove}."
+
+    return True, "Valid move"
+
 
 def main():
     board = [[0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0, 0, 0, 0],[0, 0, 0],[0, 0, 0],[0, 0, 0]]
