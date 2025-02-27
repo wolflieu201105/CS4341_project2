@@ -395,8 +395,8 @@ def main():
                 turns += 1
                 move = makeMove(board, turns, blue)
                 end = time.time()
-                if (end - start < 11):
-                    time.sleep(11 - end + start)
+                if (end - start < 15):
+                    time.sleep(15 - end + start)
                 print(move, flush = True)
                 board = changeBoard(board, move, 1)
                 myTurn = False
