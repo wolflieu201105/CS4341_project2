@@ -267,7 +267,7 @@ def makeRandomMove(board, turn, isBlue):
 
 def checkValidMove(board, move, turn, blue):
     move = move.split(" ")
-    myPiece = 1 if blue else -1
+    myPiece = 1
     if (turn <= 20):
         if (blue):
             if (move[0] != "h1"):
@@ -288,17 +288,17 @@ def checkValidMove(board, move, turn, blue):
     if (board[moveUsed[0]][moveUsed[1]] != 0):
         return "You can't move to that position"
     if (move[2] == "r0"):
-        if turn <= 20:
+        if turn > 20:
             move1 = moveToIndex(move[0])
             board = changeBoardWithIndex(board, move1[0], move1[1], 0)
         board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], myPiece)
         if (checkForMill(board, moveUsed[0], moveUsed[1], myPiece)):
             board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], 0)
-            if turn <= 20:
+            if turn > 20:
                 board = changeBoardWithIndex(board, move1[0], move1[1], myPiece)
             return "You need to remove an opponent piece"    
         board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], 0)
-        if turn <= 20:
+        if turn > 20:
             board = changeBoardWithIndex(board, move1[0], move1[1], myPiece)
         
     if (move[2] != "r0"):
@@ -359,7 +359,9 @@ def makeMove(board, turns, blue):
         contents=[content + parseInstruction]
     )
     returnMove = response.text[0:8]
-    for i in range(2):
+
+    numberOfTries = 1
+    for i in range(numberOfTries):
         validText = checkValidMove(board, returnMove, turns, blue)
         if (validText == "Good stuff"):
             return returnMove
