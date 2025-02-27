@@ -265,6 +265,53 @@ def makeRandomMove(board, turn, isBlue):
     
     return firstMove + " " + secondMove + " " + thirdMove
 
+def checkValidMove(board, move, turn, blue):
+    move = move.split(" ")
+    myPiece = 1 if blue else -1
+    if (turn <= 20):
+        if (blue):
+            if (move[0] != "h1"):
+                return "You need to use h1 as you are a blue player"
+        else:
+            if (move[0] != "h2"):
+                return "You need to use h2 as you are a orange player"
+        if (move[0] != "h1" and move[0] != "h2"):
+            return "You don't have any piece on hand"
+    else:
+        if (move[0] == "h1" or move[0] == "h2"):
+            return "You have no piece on hand"
+        moveUsed = moveToIndex(move[0])
+        if (board[moveUsed[0]][moveUsed[1]] != myPiece):
+            return "You don't have a piece at " + move[0] + " position"
+    
+    moveUsed = moveToIndex(move[1])
+    if (board[moveUsed[0]][moveUsed[1]] != 0):
+        return "You can't move to that position"
+    if (move[2] == "r0"):
+        if turn <= 20:
+            move1 = moveToIndex(move[0])
+            board = changeBoardWithIndex(board, move1[0], move1[1], 0)
+        board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], myPiece)
+        if (checkForMill(board, moveUsed[0], moveUsed[1], myPiece)):
+            board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], 0)
+            if turn <= 20:
+                board = changeBoardWithIndex(board, move1[0], move1[1], myPiece)
+            return "You need to remove an opponent piece"    
+        board = changeBoardWithIndex(board, moveUsed[0], moveUsed[1], 0)
+        if turn <= 20:
+            board = changeBoardWithIndex(board, move1[0], move1[1], myPiece)
+        
+    if (move[2] != "r0"):
+        newMoveUsed = moveToIndex(move[2])
+        check = True
+        for position in checkRemovableSpaces(board, -myPiece):
+            if (position[0] == newMoveUsed[0] and position[1] == newMoveUsed[1]):
+                check = False
+                break
+            if (check):
+                return "You can't remove that piece"
+    return "Good stuff"
+
 def makeMove(board, turns, blue):
     instruction = "Please return the asnswer in 4.5 seconds"
     instruction += "This is a game called larsker morris, I want you to provide the best move possible. Here is how I symbolize the positions: The board has the following format:\n"
@@ -300,7 +347,7 @@ def makeMove(board, turns, blue):
     
     content += "The board is as follows: (1 is your man, 0 is empty, -1 is the opponent's man\n"
     content += printBoard(board)
-    content += "You just need to give out the move, nothing else"
+    parseInstruction = "You just need to give out the move, nothing else"
 
     sys_instruct = instruction
     client = genai.Client(api_key=api_key)
@@ -309,9 +356,24 @@ def makeMove(board, turns, blue):
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
             system_instruction=sys_instruct),
-        contents=[content]
+        contents=[content + parseInstruction]
     )
-    # return (response.text[0:8])
+    returnMove = response.text[0:8]
+    for i in range(2):
+        validText = checkValidMove(board, returnMove, turns, blue)
+        if (validText == "Good stuff"):
+            return returnMove
+        else:
+            content += "Your move is invalid, please try again (your previous move is " + returnMove + ")\n"
+            content += "And it violates the following rules: " + validText + "\n"
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_instruct),
+                contents=[content + parseInstruction]
+            )
+            returnMove = response.text[0:8]
+
     return makeRandomMove(board, turns, blue)
 
 def main():
@@ -328,11 +390,11 @@ def main():
         try:
             if (myTurn):
                 start = time.time()
+                turns += 1
                 move = makeMove(board, turns, blue)
                 end = time.time()
-                if (end - start < 4):
-                    time.sleep(4 - end + start)
-                turns += 1
+                if (end - start < 11):
+                    time.sleep(11 - end + start)
                 print(move, flush = True)
                 board = changeBoard(board, move, 1)
                 myTurn = False
