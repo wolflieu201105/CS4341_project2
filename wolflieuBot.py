@@ -269,7 +269,7 @@ def makeMove(board, turns, blue, isSecond=0):
     if isSecond==1:
         instruction = "You just answered incorrectly, please try again." 
     elif isSecond == 2:
-        return makeRandomMove
+        return makeRandomMove(board, turns, blue)
     else: instruction = ""
     
     instruction += "Please return the answer in 4.5 seconds"
