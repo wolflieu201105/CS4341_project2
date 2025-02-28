@@ -18,6 +18,7 @@ III. Prompt engineering
    * Displays the number of pieces on hand
    * Provides the current board state
    * Instructs the model to return only a valid move
+   * Provides prompt timeout since Gemini needs time to answer
 * Findings:
    * Making the LLM reiterate its move improves the accuracy
    * Adding a move format and providing example improves the accuracy
