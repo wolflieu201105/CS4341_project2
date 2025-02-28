@@ -1,0 +1,2 @@
+worstBot
+python worstBot.py

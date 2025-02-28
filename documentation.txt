@@ -1,0 +1,26 @@
+﻿I. Running the program
+* Run locally: “python worstBot.py”. Type “blue” or “orange”: this will assign the color for the bot. Then type your move according to the format: “h1 d3 r0”. Play until the game ends.
+* Install the referee using commands as mentioned in the referee GitHub repository.
+* Run “cs4341-referee laskermorris -p1 "python worstBot.py" -p2 "python <another_player>.py" --visual”. Put in another player, which can be the player made during Project 1 or another worstBot.py.
+II. System description
+* We used a Gemini API key to access the API, and use the client instance created for the interactions.
+* The program creates an input that describes the game instructions and move prompt. The move prompt contains the current game state and asks for the best possible move. For this, we used the generate_content function from the client.
+* The LLM should return the moves in format: “h1 d3 r0”. We’ll then check if the move is valid or not.
+* If the move is invalid, we’ll prompt the LLM to try again, providing it with the error of its move. If the move is still invalid after validation, the program defaults to a random move.
+III. Prompt engineering
+* System instructions:
+   * Describes the board structure and valid moves
+   * Explains the three phases of the game
+   * Details how mills and removals work
+   * Requests the best possible move from the model
+* Move prompt: 
+   * Specifies whether the bot is playing as blue or orange
+   * Displays the number of pieces on hand
+   * Provides the current board state
+   * Instructs the model to return only a valid move
+* Findings:
+   * Making the LLM reiterate its move improves the accuracy
+   * Adding a move format and providing example improves the accuracy
+IV. Testing & result
+* The player has losses and wins against the player in project 1, meaning that Gemini doesn’t always produce the optimal solution
+* This means that LLMs are not reliable as gaming agents.
